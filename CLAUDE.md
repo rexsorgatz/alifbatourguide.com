@@ -57,4 +57,4 @@ Upcoming chapters (links in homepage grid without `class="live"` or `href`): F, 
 
 ## Adding New Chapters
 
-Use the `/new-chapter` skill to create chapter pages from Google Docs. It takes a Google Doc URL, a folder slug, and the chapter title. The doc must be link-shared ("anyone with the link can view"). The skill exports the doc as `.docx`, converts to clean HTML via `pandoc`, then wraps the content in the chapter template. This preserves headings, blockquotes, bold/italic, links, and Arabic/Unicode text. Images are skipped — add them manually after. Requires `pandoc` (install via `brew install pandoc`).
+Use the `/new-chapter` skill to create chapter pages from Google Docs. It takes a Google Doc URL and a folder slug. The chapter title is extracted automatically from the document. The doc must be link-shared ("anyone with the link can view"). The skill exports the doc as `.docx`, converts to clean HTML via `pandoc`, then wraps the content in the chapter template. This preserves headings, blockquotes, bold/italic, links, and Arabic/Unicode text. Requires `pandoc` (install via `brew install pandoc`).
