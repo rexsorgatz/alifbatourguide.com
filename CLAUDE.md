@@ -34,7 +34,7 @@ python build.py --migrate    # extract content.html from existing index.html fil
 python build.py --diff       # preview what would change without writing
 ```
 
-**Migration is incremental.** Chapters with a `content.html` are built from the template. Chapters without one keep their hand-written `index.html` as-is. Both coexist.
+**Editing workflow:** Edit `content.html` (the source of truth), then run `python build.py {slug}` to regenerate `index.html`. Never edit `index.html` directly — it will be overwritten on the next build.
 
 The `content.html` format:
 ```html
