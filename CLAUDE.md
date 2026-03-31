@@ -26,7 +26,7 @@ This is a **static HTML site** with a minimal build system for chapter pages.
 
 No package manager, no CSS preprocessor, no JavaScript framework. Hosted on **Cloudflare Pages**. To "deploy," commit and push.
 
-**Note:** `/the-arabic-alphabet/_img/` is in `.gitignore` — chapter illustrations exist on disk but are not tracked in git. This can be toggled on/off as needed.
+**Note:** `/the-arabic-alphabet/_img/` is tracked in git and deployed to Cloudflare Pages. The images are ~98MB total. Since the site has no build step on Cloudflare, images must be in the repo to be served.
 
 ## Build System
 
