@@ -1,7 +1,7 @@
 ---
 name: new-chapter
 description: Create a new chapter page from a Google Doc URL
-argument-hint: <google-doc-url> <slug> <chapter-title>
+argument-hint: <google-doc-url> <slug>
 allowed-tools: Write, Bash, Read, Glob
 ---
 
@@ -15,78 +15,57 @@ Create a new chapter page for The Arabic Alphabet: A Guided Tour.
 
 The user provides: `$ARGUMENTS`
 
-Parse three values from the arguments:
+Parse two values from the arguments:
 1. **Google Doc URL** — a `docs.google.com` URL
 2. **Slug** — the folder name (e.g. `fa`, `qaf`, `kaf`)
-3. **Chapter title** — the full chapter heading (e.g. "The F Word", "Qaf is for Cadi")
 
-If any of these are missing, ask for them before proceeding.
+The chapter title is extracted automatically from the document. If either argument is missing, ask for it before proceeding.
 
-## Step 1: Fetch the Google Doc
+## Step 1: Fetch and convert the Google Doc
 
 Extract the document ID from the URL. Google Doc URLs look like:
 - `https://docs.google.com/document/d/{DOC_ID}/edit`
 - `https://docs.google.com/document/d/{DOC_ID}/...`
 
-Fetch the raw HTML export using curl via Bash. This preserves the actual HTML structure (heading levels, blockquotes, indentation) which WebFetch would lose by converting to markdown.
+Export as `.docx` and convert to clean HTML using pandoc:
 
 ```bash
-curl -sL "https://docs.google.com/document/d/{DOC_ID}/export?format=html" -o /tmp/gdoc-export.html
+curl -sL "https://docs.google.com/document/d/{DOC_ID}/export?format=docx" -o /tmp/gdoc-export.docx
+pandoc /tmp/gdoc-export.docx -f docx -t html --wrap=none -o /tmp/pandoc-output.html
 ```
-
-Then read the file with the Read tool. The HTML will be messy (inline styles, span tags, Google classes) but the document *structure* is intact — real heading tags, real style attributes showing indentation, etc. The cleaning step below handles the mess.
 
 Note: The Google Doc must be shared with "anyone with the link can view" for this to work. If curl returns a login page or error, ask the user to check sharing permissions.
 
-## Step 2: Clean the HTML
+## Step 2: Clean the pandoc output and build the page
 
-Google Docs HTML export is full of junk. Strip it down to clean semantic HTML:
+Run this Python script via Bash, substituting `{SLUG}` with the user's slug value:
 
-**Remove entirely:**
-- All `<style>` blocks and `style="..."` attributes
-- All `class` attributes
-- All `id` attributes
-- All `<span>` tags (unwrap them, keeping their text content)
-- All `<img>` tags (skip images entirely)
-- All `<div>` tags (unwrap them, keeping their content)
-- All empty paragraphs (`<p><br></p>`, `<p></p>`)
-- All Google's metadata, `<head>` content, `<html>`/`<body>` wrappers
-- Any `<!-- comments -->`
-- Any `<sup>` footnote reference links that point to Google Doc anchors
+```python
+import re, os
 
-**Preserve and clean:**
-- `<p>` tags — keep as-is, but remove any attributes
-- `<strong>` and `<b>` — normalize to `<strong>`
-- `<em>` and `<i>` — normalize to `<em>`
-- `<blockquote>` — keep, remove attributes
-- `<h1>` through `<h6>` — keep, remove attributes. The chapter title is already in the template's `<h2>`, so any headings in the doc body become `<h3>`. Subheadings within those become `<h4>`. Shift all heading levels accordingly
-- `<a href="...">` — keep links, but remove all attributes except `href`
-- `<ul>`, `<ol>`, `<li>` — keep, remove attributes
-- `<table>`, `<tr>`, `<td>`, `<th>` — keep, remove attributes
-- `<br>` — keep
+with open('/tmp/pandoc-output.html', 'r', encoding='utf-8') as f:
+    content = f.read()
 
-**Arabic/Unicode text:**
-- All Arabic, Persian, and Urdu script MUST be preserved exactly as-is
-- All diacritical marks and special Unicode characters (Ḥ, Ṣ, Ṭ, Ẓ, â, î, û, etc.) MUST be preserved
-- Never HTML-entity-encode Arabic characters — keep them as raw UTF-8
+# Extract title from the first <h2> tag for use in meta tags
+title_match = re.search(r'<h2[^>]*>(.*?)</h2>', content)
+title = re.sub(r'<[^>]+>', '', title_match.group(1)) if title_match else 'Untitled'
 
-**Formatting cleanup:**
-- Collapse multiple consecutive `<br>` into a single paragraph break
-- Remove leading/trailing whitespace inside tags
-- Ensure clean, readable indentation
+# Clean: strip id attributes from headings
+content = re.sub(r'<(h[2-6]) id="[^"]*">', r'<\1>', content)
 
-## Step 3: Apply the first-paragraph drop cap
+# Clean: unwrap <u> tags (keep text)
+content = re.sub(r'<u>(.*?)</u>', r'\1', content)
 
-Add `class="first"` to the first `<p>` tag of the chapter body content. This triggers the site's drop-cap styling.
+# Clean: remove <img> tags
+content = re.sub(r'<img[^>]*/?>', '', content)
 
-## Step 4: Create the chapter page
+# Clean: remove empty paragraphs
+content = re.sub(r'<p>\s*</p>', '', content)
 
-Create the directory and file at: `the-arabic-alphabet/{slug}/index.html`
+# Add drop cap to first <p> tag
+content = content.replace('<p>', '<p class="first">', 1)
 
-Use this exact template, substituting `{SLUG}`, `{TITLE}`, and `{CONTENT}`:
-
-```html
-<!DOCTYPE html>
+TEMPLATE = '''<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
@@ -113,11 +92,9 @@ Use this exact template, substituting `{SLUG}`, `{TITLE}`, and `{CONTENT}`:
 <body>
 <article>
 
-	<h1><a href="/">The Arabic Alphabet: A Guided Tour</a></h1>
-	<h4>by Michael Beard</h4>
-	<h5>illustrated by Houman Mortazavi</h5>
-
-	<h2>{TITLE}</h2>
+\t<h1><a href="/">The Arabic Alphabet: A Guided Tour</a></h1>
+\t<h4>by Michael Beard</h4>
+\t<h5>illustrated by Houman Mortazavi</h5>
 
 {CONTENT}
 
@@ -130,7 +107,7 @@ Use this exact template, substituting `{SLUG}`, `{TITLE}`, and `{CONTENT}`:
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-S1HS1928FK"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
+  function gtag(){{dataLayer.push(arguments);}}
   gtag('js', new Date());
 
   gtag('config', 'G-S1HS1928FK');
@@ -138,13 +115,29 @@ Use this exact template, substituting `{SLUG}`, `{TITLE}`, and `{CONTENT}`:
 
 
 </body>
-</html>
+</html>'''
+
+final = TEMPLATE.replace('{TITLE}', title).replace('{CONTENT}', content)
+
+slug = '{SLUG}'
+out_dir = f'the-arabic-alphabet/{slug}'
+os.makedirs(out_dir, exist_ok=True)
+with open(f'{out_dir}/index.html', 'w', encoding='utf-8') as f:
+    f.write(final)
+
+p_count = content.count('<p')
+bq_count = content.count('<blockquote>')
+link_count = content.count('<a href=')
+h3_count = content.count('<h3>')
+has_arabic = bool(re.search(r'[\u0600-\u06FF]', content))
+print(f'Title: {title}')
+print(f'Created: {out_dir}/index.html ({len(final)} bytes)')
+print(f'Stats: {p_count} paragraphs, {h3_count} sections, {bq_count} blockquotes, {link_count} links, Arabic: {has_arabic}')
 ```
 
-## Step 5: Report
+## Step 3: Report
 
-After creating the file, tell the user:
-- The file path that was created
-- A brief summary of what was extracted (approximate paragraph count, whether Arabic text was found, any links preserved)
-- Remind them that images were skipped and will need to be added manually
+After running the script, tell the user:
+- The file path and title that were extracted
+- The stats from the script output
 - Remind them to update the homepage grid (`index.html`) when ready to publish by adding `class="live"` and the `href` to the letter's entry
