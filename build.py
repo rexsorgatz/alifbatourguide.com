@@ -55,8 +55,12 @@ def build_chapter(slug, template, diff_only=False):
 
     meta, body = parse_frontmatter(raw)
     title = meta.get('title') or extract_h2_title(body) or 'Untitled'
+    byline = meta.get('byline', 'illustrated by Houman Mortazavi')
 
-    output = template.replace('{TITLE}', title).replace('{CONTENT}', body)
+    output = (template
+              .replace('{TITLE}', title)
+              .replace('{BYLINE}', byline)
+              .replace('{CONTENT}', body))
 
     out_path = os.path.join(CHAPTERS_DIR, slug, 'index.html')
 
@@ -106,7 +110,7 @@ def migrate_chapter(slug):
 
     # Find content between bylines and </article>
     byline_match = re.search(
-        r'<h5>illustrated by Houman Mortazavi</h5>\s*\n', html
+        r'<h5>illustrated.*?by Houman Mortazavi</h5>\s*\n', html
     )
     article_end = html.rfind('</article>')
 
