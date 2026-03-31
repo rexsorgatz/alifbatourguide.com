@@ -55,11 +55,11 @@ def build_chapter(slug, template, diff_only=False):
 
     meta, body = parse_frontmatter(raw)
     title = meta.get('title') or extract_h2_title(body) or 'Untitled'
-    byline = meta.get('byline', 'illustrated by Houman Mortazavi')
+    illustrator = meta.get('illustrator', 'illustrated by Houman Mortazavi')
 
     output = (template
               .replace('{TITLE}', title)
-              .replace('{BYLINE}', byline)
+              .replace('{ILLUSTRATOR}', illustrator)
               .replace('{CONTENT}', body))
 
     out_path = os.path.join(CHAPTERS_DIR, slug, 'index.html')
