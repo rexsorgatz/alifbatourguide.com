@@ -17,8 +17,18 @@ import glob
 ROOT = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE_PATH = os.path.join(ROOT, '_templates', 'chapter.html')
 CHAPTERS_DIR = os.path.join(ROOT, 'the-arabic-alphabet')
+SITE_URL = 'https://alifbatourguide.com'
 
 SKIP_DIRS = {'_img', 'book'}
+
+
+def list_chapter_dirs():
+    """List all chapter directory names, excluding non-chapter dirs."""
+    return sorted([
+        d for d in os.listdir(CHAPTERS_DIR)
+        if os.path.isdir(os.path.join(CHAPTERS_DIR, d))
+        and d not in SKIP_DIRS
+    ])
 
 
 def parse_frontmatter(text):
@@ -137,22 +147,13 @@ def migrate_chapter(slug):
     return f'  Migrated: {slug} -> content.html ({title})'
 
 
-SITE_URL = 'https://alifbatourguide.com'
-
-
 def generate_sitemap():
     """Generate sitemap.xml from all published pages."""
     urls = [SITE_URL + '/']
 
-    # Add all chapter pages
-    slugs = sorted([
-        d for d in os.listdir(CHAPTERS_DIR)
-        if os.path.isdir(os.path.join(CHAPTERS_DIR, d))
-        and d not in SKIP_DIRS
-        and os.path.exists(os.path.join(CHAPTERS_DIR, d, 'index.html'))
-    ])
-    for slug in slugs:
-        urls.append(f'{SITE_URL}/the-arabic-alphabet/{slug}/')
+    for slug in list_chapter_dirs():
+        if os.path.exists(os.path.join(CHAPTERS_DIR, slug, 'index.html')):
+            urls.append(f'{SITE_URL}/the-arabic-alphabet/{slug}/')
 
     xml = ['<?xml version="1.0" encoding="UTF-8"?>']
     xml.append('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
@@ -168,24 +169,13 @@ def generate_sitemap():
     print(f'  Sitemap: {len(urls)} URLs -> sitemap.xml')
 
 
-def get_chapter_slugs(args):
-    """Get chapter slugs from args, or all directories."""
-    if args:
-        return args
-    return sorted([
-        d for d in os.listdir(CHAPTERS_DIR)
-        if os.path.isdir(os.path.join(CHAPTERS_DIR, d))
-        and d not in SKIP_DIRS
-    ])
-
-
 def main():
     args = sys.argv[1:]
 
     # --migrate mode
     if '--migrate' in args:
         args.remove('--migrate')
-        slugs = get_chapter_slugs(args)
+        slugs = args or list_chapter_dirs()
         print(f'Migrating {len(slugs)} chapter(s)...')
         for slug in slugs:
             print(migrate_chapter(slug))
@@ -221,6 +211,8 @@ def main():
                 print(result)
         return
 
+    building_all = not sys.argv[1:] or diff_only
+
     print(f'Building {len(slugs)} chapter(s)...')
     for slug in slugs:
         title = build_chapter(slug, template)
@@ -229,7 +221,8 @@ def main():
         else:
             print(f'  Skipped: {slug} (no content.html)')
 
-    generate_sitemap()
+    if building_all:
+        generate_sitemap()
     print('Done.')
 
 
