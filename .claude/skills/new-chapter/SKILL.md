@@ -2,12 +2,14 @@
 name: new-chapter
 description: Create a new chapter page from a Google Doc URL
 argument-hint: <google-doc-url> <slug> <chapter-title>
-allowed-tools: WebFetch, Write, Bash, Read, Glob
+allowed-tools: Write, Bash, Read, Glob
 ---
 
 # New Chapter from Google Doc
 
 Create a new chapter page for The Arabic Alphabet: A Guided Tour.
+
+**Important: This is a formatting task, not an editorial task.** Transfer all text exactly as it appears in the Google Doc. Do not correct spelling, fix grammar, adjust punctuation, or reword any prose. The author's text is intentional — just convert the formatting to clean HTML.
 
 ## Arguments
 
@@ -26,12 +28,15 @@ Extract the document ID from the URL. Google Doc URLs look like:
 - `https://docs.google.com/document/d/{DOC_ID}/edit`
 - `https://docs.google.com/document/d/{DOC_ID}/...`
 
-Fetch the HTML export:
-```
-https://docs.google.com/document/d/{DOC_ID}/export?format=html
+Fetch the raw HTML export using curl via Bash. This preserves the actual HTML structure (heading levels, blockquotes, indentation) which WebFetch would lose by converting to markdown.
+
+```bash
+curl -sL "https://docs.google.com/document/d/{DOC_ID}/export?format=html" -o /tmp/gdoc-export.html
 ```
 
-Use WebFetch to retrieve this.
+Then read the file with the Read tool. The HTML will be messy (inline styles, span tags, Google classes) but the document *structure* is intact — real heading tags, real style attributes showing indentation, etc. The cleaning step below handles the mess.
+
+Note: The Google Doc must be shared with "anyone with the link can view" for this to work. If curl returns a login page or error, ask the user to check sharing permissions.
 
 ## Step 2: Clean the HTML
 
@@ -54,8 +59,8 @@ Google Docs HTML export is full of junk. Strip it down to clean semantic HTML:
 - `<strong>` and `<b>` — normalize to `<strong>`
 - `<em>` and `<i>` — normalize to `<em>`
 - `<blockquote>` — keep, remove attributes
-- `<h1>` through `<h6>` — keep, remove attributes. Shift heading levels if needed so the chapter content starts at `<h3>` (since h1 and h2 are used by the site template)
-- `<a href="...">` — keep links, but remove all attributes except `href`. Remove any Google redirect wrappers (URLs like `https://www.google.com/url?q=...&sa=...` should be unwrapped to just the target URL)
+- `<h1>` through `<h6>` — keep, remove attributes. The chapter title is already in the template's `<h2>`, so any headings in the doc body become `<h3>`. Subheadings within those become `<h4>`. Shift all heading levels accordingly
+- `<a href="...">` — keep links, but remove all attributes except `href`
 - `<ul>`, `<ol>`, `<li>` — keep, remove attributes
 - `<table>`, `<tr>`, `<td>`, `<th>` — keep, remove attributes
 - `<br>` — keep
