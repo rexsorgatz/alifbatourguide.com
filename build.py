@@ -137,6 +137,37 @@ def migrate_chapter(slug):
     return f'  Migrated: {slug} -> content.html ({title})'
 
 
+SITE_URL = 'https://alifbatourguide.com'
+
+
+def generate_sitemap():
+    """Generate sitemap.xml from all published pages."""
+    urls = [SITE_URL + '/']
+
+    # Add all chapter pages
+    slugs = sorted([
+        d for d in os.listdir(CHAPTERS_DIR)
+        if os.path.isdir(os.path.join(CHAPTERS_DIR, d))
+        and d not in SKIP_DIRS
+        and os.path.exists(os.path.join(CHAPTERS_DIR, d, 'index.html'))
+    ])
+    for slug in slugs:
+        urls.append(f'{SITE_URL}/the-arabic-alphabet/{slug}/')
+
+    xml = ['<?xml version="1.0" encoding="UTF-8"?>']
+    xml.append('<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">')
+    for url in urls:
+        xml.append(f'  <url><loc>{url}</loc></url>')
+    xml.append('</urlset>')
+    xml.append('')
+
+    sitemap_path = os.path.join(ROOT, 'sitemap.xml')
+    with open(sitemap_path, 'w', encoding='utf-8') as f:
+        f.write('\n'.join(xml))
+
+    print(f'  Sitemap: {len(urls)} URLs -> sitemap.xml')
+
+
 def get_chapter_slugs(args):
     """Get chapter slugs from args, or all directories."""
     if args:
@@ -198,6 +229,7 @@ def main():
         else:
             print(f'  Skipped: {slug} (no content.html)')
 
+    generate_sitemap()
     print('Done.')
 
 
