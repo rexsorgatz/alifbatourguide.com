@@ -56,10 +56,15 @@ def build_chapter(slug, template, diff_only=False):
     meta, body = parse_frontmatter(raw)
     title = meta.get('title') or extract_h2_title(body) or 'Untitled'
     illustrator = meta.get('illustrator', 'illustrated by Houman Mortazavi')
+    description = meta.get('description',
+                           'An homage to the Arabic alphabet in 32 chapters, '
+                           'one letter at a time, from Alif to Yay.')
 
     output = (template
               .replace('{TITLE}', title)
               .replace('{ILLUSTRATOR}', illustrator)
+              .replace('{DESCRIPTION}', description)
+              .replace('{SLUG}', slug)
               .replace('{CONTENT}', body))
 
     out_path = os.path.join(CHAPTERS_DIR, slug, 'index.html')

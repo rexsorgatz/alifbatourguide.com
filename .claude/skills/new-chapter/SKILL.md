@@ -74,11 +74,14 @@ Add `class="first"` to the first `<p>` tag of the chapter body content. This tri
 
 Create the directory and file at: `the-arabic-alphabet/{slug}/content.html`
 
-The content file uses YAML frontmatter for the title, followed by the chapter body HTML. The `<h2>` chapter title should be included as the first element of the body content.
+The content file uses YAML frontmatter for metadata, followed by the chapter body HTML. The `<h2>` chapter title should be included as the first element of the body content.
+
+Generate a `description` — 1-2 sentences that capture the chapter's themes and key topics. This appears in search results and social media previews. Aim for 140-180 characters. Match the tone of the book: erudite, wandering, full of surprising connections.
 
 ```html
 ---
 title: {TITLE}
+description: {1-2 sentence description of the chapter's themes}
 illustrator: illustrated by Houman Mortazavi
 ---
 
