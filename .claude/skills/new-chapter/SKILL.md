@@ -79,6 +79,7 @@ The content file uses YAML frontmatter for the title, followed by the chapter bo
 ```html
 ---
 title: {TITLE}
+illustrator: illustrated by Houman Mortazavi
 ---
 
 	<h2>{TITLE}</h2>

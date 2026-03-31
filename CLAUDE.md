@@ -25,7 +25,7 @@ No package manager, no CSS preprocessor, no JavaScript framework. To "deploy," c
 
 ## Build System
 
-Chapter pages use a simple Python build script (`build.py`) with a shared template (`_templates/chapter.html`). The template provides the `<head>`, site header, footer, and analytics. Each chapter's `content.html` contains just the body content with a YAML frontmatter `title` field.
+Chapter pages use a simple Python build script (`build.py`) with a shared template (`_templates/chapter.html`). The template provides the `<head>`, site header, footer, and analytics. Each chapter's `content.html` contains just the body content with YAML frontmatter (`title` and `illustrator` fields).
 
 ```bash
 python build.py              # build all chapters that have content.html
@@ -40,6 +40,7 @@ The `content.html` format:
 ```html
 ---
 title: Alif
+illustrator: illustrated by Houman Mortazavi
 ---
 
 	<h2>Alif, The Minimal Stroke</h2>
