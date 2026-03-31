@@ -211,8 +211,6 @@ def main():
                 print(result)
         return
 
-    building_all = not sys.argv[1:] or diff_only
-
     print(f'Building {len(slugs)} chapter(s)...')
     for slug in slugs:
         title = build_chapter(slug, template)
@@ -221,8 +219,7 @@ def main():
         else:
             print(f'  Skipped: {slug} (no content.html)')
 
-    if building_all:
-        generate_sitemap()
+    generate_sitemap()
     print('Done.')
 
 
