@@ -1,1 +1,3 @@
 the-arabic-alphabet/_img/
+.DS_Store
+__pycache__/
