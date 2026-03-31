@@ -34,43 +34,21 @@ curl -sL "https://docs.google.com/document/d/{DOC_ID}/export?format=docx" -o /tm
 pandoc /tmp/gdoc-export.docx -f docx -t html --wrap=none -o /tmp/pandoc-output.html
 ```
 
-Then read `/tmp/pandoc-output.html` with the Read tool.
-
 Note: The Google Doc must be shared with "anyone with the link can view" for this to work. If curl returns a login page or error, ask the user to check sharing permissions.
 
 ## Step 2: Clean the pandoc output
 
-Pandoc's output is already mostly clean. Apply these final cleanups:
+Run the cleanup script to extract the title, strip unwanted markup, and add the drop-cap class:
 
-**Remove:**
-- The first `<h2>` (the chapter title — it will be extracted for the frontmatter `title` field, then re-added as the visible `<h2>` in the content)
-- All `id` attributes on headings (e.g. `id="the-f-word"`)
-- All `<u>` tags inside links (unwrap them, keeping their text)
-- All `<span dir="rtl">` tags (unwrap them, keeping their Arabic text content)
-- All `<img>` tags (skip images entirely)
-- All `<sup>` footnote reference links that point to internal doc anchors (keep `<sup>` used for ordinals like "8th")
-- Any empty paragraphs
+```bash
+python3 clean.py /tmp/pandoc-output.html -o /tmp/cleaned.html
+```
 
-**Preserve as-is:**
-- `<p>` tags
-- `<strong>` and `<em>`
-- `<blockquote>` (pandoc detects these from the docx structure)
-- `<h3>` section headings. The chapter title is already extracted for the `<h2>`, so the doc's `<h3>` tags stay as `<h3>`. If the doc uses `<h2>` for section breaks, shift them to `<h3>`
-- `<a href="...">` links (pandoc already strips Google redirect wrappers)
-- `<ul>`, `<ol>`, `<li>`
-- `<table>`, `<tr>`, `<td>`, `<th>`
-- `<br>`
+This handles: removing the first `<h2>` (extracted as the title), stripping heading `id` attributes, unwrapping `<u>` and `<span dir="rtl">` tags, removing `<img>` tags and empty paragraphs, removing footnote `<sup>` links, and adding `class="first"` to the first `<p>`. Arabic/Unicode text passes through untouched.
 
-**Arabic/Unicode text:**
-- All Arabic, Persian, and Urdu script MUST be preserved exactly as-is
-- All diacritical marks and special Unicode characters (Ḥ, Ṣ, Ṭ, Ẓ, â, î, û, etc.) MUST be preserved
-- Never HTML-entity-encode Arabic characters — keep them as raw UTF-8
+The script prints the extracted title and content stats to stderr. Read `/tmp/cleaned.html` to verify the output looks correct before proceeding.
 
-## Step 3: Apply the first-paragraph drop cap
-
-Add `class="first"` to the first `<p>` tag of the chapter body content. This triggers the site's drop-cap styling.
-
-## Step 4: Create the content file
+## Step 3: Create the content file
 
 Create the directory and file at: `the-arabic-alphabet/{slug}/content.html`
 
@@ -92,7 +70,7 @@ illustrator: illustrated by Houman Mortazavi
 
 Note: This is a **content fragment**, not a full HTML page. The shared template (`_templates/chapter.html`) provides the `<head>`, header, footer, and analytics. The `build.py` script assembles them.
 
-## Step 5: Build the page
+## Step 4: Build the page
 
 Run the build script to generate the final `index.html` from the content file and shared template:
 
@@ -102,7 +80,7 @@ python3 build.py {slug}
 
 This reads `content.html`, wraps it in `_templates/chapter.html`, and writes `the-arabic-alphabet/{slug}/index.html`.
 
-## Step 6: Report
+## Step 5: Report
 
 After building, tell the user:
 - The file path that was created

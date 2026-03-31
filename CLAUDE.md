@@ -20,6 +20,7 @@ This is a **static HTML site** with a minimal build system for chapter pages.
 - `/img/` — Homepage images
 - `/_templates/chapter.html` — Shared chapter page template
 - `/build.py` — Builds `index.html` from `content.html` + template
+- `/clean.py` — Cleans pandoc HTML output for use as chapter content
 
 No package manager, no CSS preprocessor, no JavaScript framework. Hosted on **Cloudflare Pages**. To "deploy," commit and push.
 
