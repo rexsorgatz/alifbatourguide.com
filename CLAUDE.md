@@ -8,21 +8,48 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture
 
-This is a **pure static HTML site** with no build system, no templating engine, and no server-side processing. Every page is hand-written HTML.
+This is a **static HTML site** with a minimal build system for chapter pages.
 
 - `/index.html` — Homepage with letter grid linking to all 32 chapters
 - `/css/_style.css` — All site styling (single file, ~57 lines)
 - `/css/qlf7wqv.css` — Adobe Typekit font loader (matrix-ii serif)
 - `/the-arabic-alphabet/*/index.html` — Individual chapter pages (one directory per letter)
+- `/the-arabic-alphabet/*/content.html` — Chapter content fragments (body + frontmatter)
 - `/the-arabic-alphabet/_img/` — All chapter illustrations (PNG/JPG)
 - `/the-arabic-alphabet/book/` — Print book layout slideshow (only page with JS)
 - `/img/` — Homepage images
+- `/_templates/chapter.html` — Shared chapter page template
+- `/build.py` — Builds `index.html` from `content.html` + template
 
-There is no build step, no package manager, no CSS preprocessor, and no JavaScript framework. To "deploy," commit and push.
+No package manager, no CSS preprocessor, no JavaScript framework. To "deploy," commit and push.
+
+## Build System
+
+Chapter pages use a simple Python build script (`build.py`) with a shared template (`_templates/chapter.html`). The template provides the `<head>`, site header, footer, and analytics. Each chapter's `content.html` contains just the body content with a YAML frontmatter `title` field.
+
+```bash
+python build.py              # build all chapters that have content.html
+python build.py alif ba      # build specific chapters
+python build.py --migrate    # extract content.html from existing index.html files
+python build.py --diff       # preview what would change without writing
+```
+
+**Migration is incremental.** Chapters with a `content.html` are built from the template. Chapters without one keep their hand-written `index.html` as-is. Both coexist.
+
+The `content.html` format:
+```html
+---
+title: Alif
+---
+
+	<h2>Alif, The Minimal Stroke</h2>
+
+	<p class="first">Content here...</p>
+```
 
 ## Chapter Page Convention
 
-Each chapter follows a consistent HTML template:
+Each chapter follows a consistent HTML structure:
 - `<head>`: meta tags with chapter-specific title, OG tags, canonical Typekit CSS link, shared `_style.css`
 - `<body>`: `<article>` wrapper containing h1 site title (linking to `/`), author/illustrator bylines, chapter heading image, h2 chapter title, prose content with inline images
 - Footer: Google Analytics snippet (gtag.js, ID `G-S1HS1928FK`)
@@ -57,4 +84,4 @@ Upcoming chapters (links in homepage grid without `class="live"` or `href`): F, 
 
 ## Adding New Chapters
 
-Use the `/new-chapter` skill to create chapter pages from Google Docs. It takes a Google Doc URL and a folder slug. The chapter title is extracted automatically from the document. The doc must be link-shared ("anyone with the link can view"). The skill exports the doc as `.docx`, converts to clean HTML via `pandoc`, then wraps the content in the chapter template. This preserves headings, blockquotes, bold/italic, links, and Arabic/Unicode text. Requires `pandoc` (install via `brew install pandoc`).
+Use the `/new-chapter` skill to create chapter pages from Google Docs. It takes a Google Doc URL and a folder slug. The chapter title is extracted automatically from the document. The doc must be link-shared ("anyone with the link can view"). The skill exports the doc as `.docx`, converts to clean HTML via `pandoc`, creates a `content.html` fragment, then runs `build.py` to assemble the final page from the shared template. This preserves headings, blockquotes, bold/italic, links, and Arabic/Unicode text. Requires `pandoc` (install via `brew install pandoc`).

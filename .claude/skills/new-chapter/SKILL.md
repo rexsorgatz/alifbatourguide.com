@@ -34,110 +34,74 @@ curl -sL "https://docs.google.com/document/d/{DOC_ID}/export?format=docx" -o /tm
 pandoc /tmp/gdoc-export.docx -f docx -t html --wrap=none -o /tmp/pandoc-output.html
 ```
 
+Then read `/tmp/pandoc-output.html` with the Read tool.
+
 Note: The Google Doc must be shared with "anyone with the link can view" for this to work. If curl returns a login page or error, ask the user to check sharing permissions.
 
-## Step 2: Clean the pandoc output and build the page
+## Step 2: Clean the pandoc output
 
-Run this Python script via Bash, substituting `{SLUG}` with the user's slug value:
+Pandoc's output is already mostly clean. Apply these final cleanups:
 
-```python
-import re, os
+**Remove:**
+- The first `<h2>` (the chapter title — it will be extracted for the frontmatter `title` field, then re-added as the visible `<h2>` in the content)
+- All `id` attributes on headings (e.g. `id="the-f-word"`)
+- All `<u>` tags inside links (unwrap them, keeping their text)
+- All `<span dir="rtl">` tags (unwrap them, keeping their Arabic text content)
+- All `<img>` tags (skip images entirely)
+- All `<sup>` footnote reference links that point to internal doc anchors (keep `<sup>` used for ordinals like "8th")
+- Any empty paragraphs
 
-with open('/tmp/pandoc-output.html', 'r', encoding='utf-8') as f:
-    content = f.read()
+**Preserve as-is:**
+- `<p>` tags
+- `<strong>` and `<em>`
+- `<blockquote>` (pandoc detects these from the docx structure)
+- `<h3>` section headings. The chapter title is already extracted for the `<h2>`, so the doc's `<h3>` tags stay as `<h3>`. If the doc uses `<h2>` for section breaks, shift them to `<h3>`
+- `<a href="...">` links (pandoc already strips Google redirect wrappers)
+- `<ul>`, `<ol>`, `<li>`
+- `<table>`, `<tr>`, `<td>`, `<th>`
+- `<br>`
 
-# Extract title from the first <h2> tag for use in meta tags
-title_match = re.search(r'<h2[^>]*>(.*?)</h2>', content)
-title = re.sub(r'<[^>]+>', '', title_match.group(1)) if title_match else 'Untitled'
+**Arabic/Unicode text:**
+- All Arabic, Persian, and Urdu script MUST be preserved exactly as-is
+- All diacritical marks and special Unicode characters (Ḥ, Ṣ, Ṭ, Ẓ, â, î, û, etc.) MUST be preserved
+- Never HTML-entity-encode Arabic characters — keep them as raw UTF-8
 
-# Clean: strip id attributes from headings
-content = re.sub(r'<(h[2-6]) id="[^"]*">', r'<\1>', content)
+## Step 3: Apply the first-paragraph drop cap
 
-# Clean: unwrap <u> tags (keep text)
-content = re.sub(r'<u>(.*?)</u>', r'\1', content)
+Add `class="first"` to the first `<p>` tag of the chapter body content. This triggers the site's drop-cap styling.
 
-# Clean: remove <img> tags
-content = re.sub(r'<img[^>]*/?>', '', content)
+## Step 4: Create the content file
 
-# Clean: remove empty paragraphs
-content = re.sub(r'<p>\s*</p>', '', content)
+Create the directory and file at: `the-arabic-alphabet/{slug}/content.html`
 
-# Add drop cap to first <p> tag
-content = content.replace('<p>', '<p class="first">', 1)
+The content file uses YAML frontmatter for the title, followed by the chapter body HTML. The `<h2>` chapter title should be included as the first element of the body content.
 
-TEMPLATE = '''<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+```html
+---
+title: {TITLE}
+---
 
-<title>The Arabic Alphabet: A Guided Tour - {TITLE}</title>
-<meta name="title" content="The Arabic Alphabet: A Guided Tour" />
-<meta name="description" content="An homage to the Arabic alphabet in 32 chapters, one letter at a time, from Alif to Yay." />
-<meta name="keywords" content="" />
-<meta name="generator" content="The mighty hands of Rex Sorgatz" />
+	<h2>{TITLE}</h2>
 
-<meta property="og:site_name" content="The Arabic Alphabet" />
-<meta property="og:title" content="The Arabic Alphabet: A Guided Tour - {TITLE}" />
-<meta property="og:description" content="An homage to the Arabic alphabet in 32 chapters, one letter at a time, from Alif to Yay.">
-<meta property="og:image" content="https://alifbatourguide.com/the-arabic-alphabet/_img/cover-cropped.jpg" />
-
-<link rel="icon" type="image/x-icon" href="https://alifbatourguide.com/favicon.ico">
-
-
-<link rel="stylesheet" href="https://use.typekit.net/qlf7wqv.css" />
-<link rel="stylesheet" href="https://alifbatourguide.com/css/_style.css" type="text/css" media="all" />
-</head>
-
-<body>
-<article>
-
-\t<h1><a href="/">The Arabic Alphabet: A Guided Tour</a></h1>
-\t<h4>by Michael Beard</h4>
-\t<h5>illustrated by Houman Mortazavi</h5>
-
-{CONTENT}
-
-
-</article>
-<br><br><br><br><br><br>
-<footer>Copyright &copy;2025 Michael Beard</footer>
-
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-S1HS1928FK"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){{dataLayer.push(arguments);}}
-  gtag('js', new Date());
-
-  gtag('config', 'G-S1HS1928FK');
-</script>
-
-
-</body>
-</html>'''
-
-final = TEMPLATE.replace('{TITLE}', title).replace('{CONTENT}', content)
-
-slug = '{SLUG}'
-out_dir = f'the-arabic-alphabet/{slug}'
-os.makedirs(out_dir, exist_ok=True)
-with open(f'{out_dir}/index.html', 'w', encoding='utf-8') as f:
-    f.write(final)
-
-p_count = content.count('<p')
-bq_count = content.count('<blockquote>')
-link_count = content.count('<a href=')
-h3_count = content.count('<h3>')
-has_arabic = bool(re.search(r'[\u0600-\u06FF]', content))
-print(f'Title: {title}')
-print(f'Created: {out_dir}/index.html ({len(final)} bytes)')
-print(f'Stats: {p_count} paragraphs, {h3_count} sections, {bq_count} blockquotes, {link_count} links, Arabic: {has_arabic}')
+{CLEANED_CONTENT}
 ```
 
-## Step 3: Report
+Note: This is a **content fragment**, not a full HTML page. The shared template (`_templates/chapter.html`) provides the `<head>`, header, footer, and analytics. The `build.py` script assembles them.
 
-After running the script, tell the user:
-- The file path and title that were extracted
-- The stats from the script output
+## Step 5: Build the page
+
+Run the build script to generate the final `index.html` from the content file and shared template:
+
+```bash
+python3 build.py {slug}
+```
+
+This reads `content.html`, wraps it in `_templates/chapter.html`, and writes `the-arabic-alphabet/{slug}/index.html`.
+
+## Step 6: Report
+
+After building, tell the user:
+- The file path that was created
+- A brief summary of what was extracted (approximate paragraph count, whether Arabic text was found, any links preserved)
+- Remind them that images were skipped and will need to be added manually
 - Remind them to update the homepage grid (`index.html`) when ready to publish by adding `class="live"` and the `href` to the letter's entry
