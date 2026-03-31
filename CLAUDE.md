@@ -21,7 +21,7 @@ This is a **static HTML site** with a minimal build system for chapter pages.
 - `/_templates/chapter.html` — Shared chapter page template
 - `/build.py` — Builds `index.html` from `content.html` + template
 
-No package manager, no CSS preprocessor, no JavaScript framework. To "deploy," commit and push.
+No package manager, no CSS preprocessor, no JavaScript framework. Hosted on **Cloudflare Pages**. To "deploy," commit and push.
 
 **Note:** `/the-arabic-alphabet/_img/` is in `.gitignore` — chapter illustrations exist on disk but are not tracked in git. This can be toggled on/off as needed.
 
