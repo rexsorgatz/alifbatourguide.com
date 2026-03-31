@@ -23,6 +23,8 @@ This is a **static HTML site** with a minimal build system for chapter pages.
 
 No package manager, no CSS preprocessor, no JavaScript framework. To "deploy," commit and push.
 
+**Note:** `/the-arabic-alphabet/_img/` is in `.gitignore` — chapter illustrations exist on disk but are not tracked in git. This can be toggled on/off as needed.
+
 ## Build System
 
 Chapter pages use a simple Python build script (`build.py`) with a shared template (`_templates/chapter.html`). The template provides the `<head>`, site header, footer, and analytics. Each chapter's `content.html` contains just the body content with YAML frontmatter (`title`, `description`, and `illustrator` fields).
