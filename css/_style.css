@@ -50,7 +50,13 @@ a.live .letter:hover {background-color: #d05a5f; color:#fff; transition: .2s;}
 .fade {animation-name: fade; animation-duration: 1s;}
 @-webkit-keyframes fade {from {opacity: .4} to {opacity: 1} }
 @keyframes fade { from {opacity: .4} to {opacity: 1} }
+/*illustrations: the -80px overhang only clears the page gutter above 1010px,
+  so below that pull the image back inside the column*/
+@media only screen and (max-width:1009px){
+.illo img {margin-left: 0 !important; margin-right: 0 !important;}
+}
 /*mobile*/
 @media only screen and (max-width:480px){
 #letters {width: 100%;}
+.illo img {float: none !important; display: block; height: auto; margin: 10px auto 20px auto !important; padding: 0 !important;}
 }	
