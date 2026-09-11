@@ -20,6 +20,7 @@ td, table {border-bottom: 1px solid #d05a5f;border-top: 1px solid #d05a5f;}
 .illo {text-align: center; }
 .illo img {max-width: 100%;}
 .coda {text-align: center; font-size: 60px; margin-top: 80px; margin-bottom: 80px;}
+.tiles {font-family: ui-monospace, Menlo, Consolas, "Courier New", monospace; font-size: 17px; line-height: 1; letter-spacing: 0.4em; white-space: pre; width: max-content; margin: 45px auto; color: #000;}
 .first:first-letter {color: #d05a5f; float: left; font-weight: bold; font-size: 105px; line-height: 92px; padding: 0 8px 0 0;}
 /*form*/
 .signup { background-color: #f4e2d6; padding: 10px 20px 20px 20px; text-align: center; margin: 50px auto 0 auto;}
