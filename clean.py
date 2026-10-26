@@ -30,8 +30,9 @@ def clean(html):
     # Unwrap <u> tags (keep text)
     html = re.sub(r'<u>(.*?)</u>', r'\1', html)
 
-    # Unwrap <span dir="rtl"> tags (keep content)
-    html = re.sub(r'<span dir="rtl">(.*?)</span>', r'\1', html, flags=re.DOTALL)
+    # Unwrap <span dir="rtl"> and <span dir="ltr"> tags (keep content). Google
+    # Docs also leaves empty ltr markers around Persian verse lines.
+    html = re.sub(r'<span dir="(?:rtl|ltr)">(.*?)</span>', r'\1', html, flags=re.DOTALL)
 
     # Remove <img> tags
     html = re.sub(r'<img[^>]*/?\s*>', '', html)
